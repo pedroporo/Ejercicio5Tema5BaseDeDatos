@@ -1,0 +1,98 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model asignaturas {
+  codigo Int     @id @default(autoincrement())
+  nombre String  @db.VarChar(45)
+  tipo   Int?
+  rama   String? @db.VarChar(59)
+  tipos  tipos?  @relation(fields: [tipo], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "asignaturas_ibfk_1")
+
+  @@index([tipo], map: "tipo")
+}
+
+model autores {
+  id           Int        @id @default(autoincrement())
+  nombre       String     @db.VarChar(60)
+  pertenece    Int?
+  tipo         Int?
+  nacionalidad String     @db.VarChar(45)
+  tipos        tipos?     @relation(fields: [tipo], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "autores_ibfk_1")
+  editorial    editorial? @relation(fields: [pertenece], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "autores_ibfk_2")
+
+  @@index([pertenece], map: "pertenece")
+  @@index([tipo], map: "tipo")
+}
+
+model editorial {
+  id                                 Int       @id @default(autoincrement())
+  nombre                             String?   @db.VarChar(60)
+  localizacion                       String?   @db.VarChar(45)
+  tipo                               Int?
+  autores                            autores[]
+  tipos                              tipos?    @relation(fields: [tipo], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "editorial_ibfk_1")
+  libros_libros_editorialToeditorial libros[]  @relation("libros_editorialToeditorial")
+
+  @@index([tipo], map: "tipo")
+}
+
+model estudiantes {
+  id        Int         @id @default(autoincrement())
+  nombre    String      @db.VarChar(60)
+  carrera   String      @db.VarChar(45)
+  prestamos prestamos[]
+}
+
+model libros {
+  id                                    Int               @id @default(autoincrement())
+  titulo                                String            @db.VarChar(40)
+  isbn                                  String            @db.VarChar(19)
+  editorial                             Int?
+  tipo                                  Int?
+  fecha_publicacion                     DateTime          @db.Date
+  editorial_libros_editorialToeditorial editorial?        @relation("libros_editorialToeditorial", fields: [editorial], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "libros_ibfk_1")
+  tipos                                 tipos?            @relation(fields: [tipo], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "libros_ibfk_2")
+  prestamos                             prestamos[]
+  registro_libros                       registro_libros[]
+
+  @@index([editorial], map: "editorial")
+  @@index([tipo], map: "tipo")
+}
+
+model prestamos {
+  id               Int          @id @default(autoincrement())
+  id_usuario       Int?
+  id_libro         Int?
+  fecha_entrega    DateTime?    @db.Date
+  fecha_devolucion DateTime?    @db.Date
+  penalizacion     Boolean?
+  estudiantes      estudiantes? @relation(fields: [id_usuario], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "prestamos_ibfk_1")
+  libros           libros?      @relation(fields: [id_libro], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "prestamos_ibfk_2")
+
+  @@index([id_libro], map: "id_libro")
+  @@index([id_usuario], map: "id_usuario")
+}
+
+model registro_libros {
+  id           Int      @id @default(autoincrement())
+  id_libro     Int
+  reutilizable Boolean?
+  libros       libros   @relation(fields: [id_libro], references: [id], onUpdate: Restrict, map: "registro_libros_ibfk_1")
+
+  @@index([id_libro], map: "id_libro")
+}
+
+model tipos {
+  id          Int           @id @default(autoincrement())
+  tipos       String?       @db.VarChar(50)
+  asignaturas asignaturas[]
+  autores     autores[]
+  editorial   editorial[]
+  libros      libros[]
+}
